@@ -1,6 +1,6 @@
 module media-sequencer
 
-go 1.27.0
+go 1.22
 
 require (
 	github.com/klauspost/compress v1.19.2 // indirect
