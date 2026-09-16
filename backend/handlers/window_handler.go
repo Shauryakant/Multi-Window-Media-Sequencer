@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -10,19 +11,26 @@ import (
 	"media-sequencer/services"
 )
 
-type SyncProvider interface {
+type SyncController interface {
 	GetSyncStatus() (bool, *models.MediaItem, *time.Time)
+	ResolveMediaItem(ctx context.Context, id string, rawItem *models.MediaItem) (*models.MediaItem, error)
+	StartSync(ctx context.Context, item models.MediaItem, durationSec int) error
 }
 
 type Handler struct {
-	store db.Store
-	sync  SyncProvider
+	store               db.Store
+	sync                SyncController
+	defaultSyncDuration int
 }
 
-func NewHandler(store db.Store, sync SyncProvider) *Handler {
+func NewHandler(store db.Store, sync SyncController, defaultSyncDuration int) *Handler {
+	if defaultSyncDuration <= 0 {
+		defaultSyncDuration = 5
+	}
 	return &Handler{
-		store: store,
-		sync:  sync,
+		store:               store,
+		sync:                sync,
+		defaultSyncDuration: defaultSyncDuration,
 	}
 }
 
@@ -169,4 +177,67 @@ func (h *Handler) AddMedia(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(updatedWin)
+}
+
+type TriggerSyncRequest struct {
+	ID          string           `json:"id"`
+	Type        string           `json:"type"`
+	URL         string           `json:"url"`
+	DurationSec int              `json:"duration_sec"`
+	MediaItem   *models.MediaItem `json:"media_item,omitempty"`
+}
+
+func (h *Handler) TriggerSync(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	var req TriggerSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && err.Error() != "EOF" {
+		http.Error(w, "Invalid JSON body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if h.sync == nil {
+		http.Error(w, "Sync manager not available", http.StatusInternalServerError)
+		return
+	}
+
+	var rawItem *models.MediaItem
+	if req.URL != "" {
+		rawItem = &models.MediaItem{
+			ID:          req.ID,
+			Type:        req.Type,
+			URL:         req.URL,
+			DurationSec: float64(req.DurationSec),
+		}
+	} else if req.MediaItem != nil {
+		rawItem = req.MediaItem
+	}
+
+	resolvedItem, err := h.sync.ResolveMediaItem(r.Context(), req.ID, rawItem)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	durationSec := req.DurationSec
+	if durationSec <= 0 {
+		durationSec = h.defaultSyncDuration
+	}
+
+	if err := h.sync.StartSync(r.Context(), *resolvedItem, durationSec); err != nil {
+		http.Error(w, "Failed to start sync: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":       "sync_started",
+		"sync_item":    resolvedItem,
+		"duration_sec": durationSec,
+	})
 }
