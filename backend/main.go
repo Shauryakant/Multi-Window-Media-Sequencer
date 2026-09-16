@@ -45,15 +45,12 @@ func main() {
 	h := handlers.NewHandler(store, syncManager, cfg.SyncDurationSeconds)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", h.Health)
-	mux.HandleFunc("GET /api/state", h.GetState)
-	mux.HandleFunc("GET /api/windows/{id}/playlist", h.GetPlaylist)
-	mux.HandleFunc("POST /api/windows/{id}/media", h.AddMedia)
-	mux.HandleFunc("POST /api/sync", h.TriggerSync)
-
-	// Fallback/backwards-compatible routing for queries
+	
+	// Router pattern without method lock to allow CORS OPTIONS preflight
 	mux.HandleFunc("/health", h.Health)
 	mux.HandleFunc("/api/state", h.GetState)
+	mux.HandleFunc("/api/windows/{id}/playlist", h.GetPlaylist)
+	mux.HandleFunc("/api/windows/{id}/media", h.AddMedia)
 	mux.HandleFunc("/api/sync", h.TriggerSync)
 
 	addr := ":" + cfg.Port

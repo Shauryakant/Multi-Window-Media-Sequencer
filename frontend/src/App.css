@@ -19,15 +19,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Full screen width container */
 .app-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .app-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
 }
@@ -44,14 +49,28 @@ body {
   font-size: 1rem;
 }
 
-.windows-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Full width 3-window horizontal row */
+.windows-flex-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: stretch;
   gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  width: 100%;
 }
 
 .media-window-card {
+  flex: 1 1 0;
+  min-width: 260px;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -104,8 +123,8 @@ body {
 
 .media-viewport {
   width: 100%;
-  height: 240px;
-  background-color: #000;
+  height: 260px;
+  background-color: #0b0f19;
   position: relative;
   display: flex;
   justify-content: center;
@@ -117,6 +136,42 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.media-content.hidden {
+  opacity: 0;
+}
+
+.media-content.visible {
+  opacity: 1;
+}
+
+.media-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 10;
+  color: var(--accent-color);
+  font-size: 0.85rem;
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .media-placeholder {
@@ -128,6 +183,10 @@ body {
 
 .media-placeholder.error {
   color: var(--danger-color);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger-color);
+  border-radius: 6px;
+  margin: 1rem;
 }
 
 .window-footer {
@@ -140,27 +199,70 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.type-tag {
+  background-color: #334155;
+  color: var(--text-primary);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
-.panel-card {
+/* Downside tabbed control dock */
+.bottom-control-dock {
+  width: 100%;
+  max-width: 900px;
+  margin: 2rem auto 1rem auto;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.tab-bar {
+  display: flex;
+  background-color: #0f172a;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.9rem 1.2rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tab-button.active {
+  color: var(--accent-color);
+  background-color: var(--card-bg);
+  border-bottom-color: var(--accent-color);
+}
+
+.tab-content {
   padding: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.panel-card {
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .panel-card h2 {
-  margin-top: 0;
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.75rem;
-  color: var(--accent-color);
+  display: none;
 }
 
 .control-form {
@@ -302,13 +404,11 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
+  max-width: 250px;
 }
 
-.app-footer {
-  text-align: center;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+@media (max-width: 900px) {
+  .windows-flex-container {
+    flex-wrap: wrap;
+  }
 }

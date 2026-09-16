@@ -24,20 +24,14 @@ func GetDefaultSeedWindows(startTime time.Time) []models.Window {
 				{
 					ID:          "m2_a",
 					Type:        "video",
-					URL:         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-					DurationSec: 15, // 0 in json or natural length, stored as 15 for cycle math estimation
+					URL:         "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+					DurationSec: 10,
 				},
 				{
 					ID:          "m3_a",
 					Type:        "image",
 					URL:         "https://picsum.photos/id/20/800/600",
 					DurationSec: 6,
-				},
-				{
-					ID:          "m4_a",
-					Type:        "video",
-					URL:         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-					DurationSec: 15,
 				},
 			},
 		},
@@ -48,8 +42,8 @@ func GetDefaultSeedWindows(startTime time.Time) []models.Window {
 				{
 					ID:          "m1_b",
 					Type:        "video",
-					URL:         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-					DurationSec: 15,
+					URL:         "https://www.w3schools.com/html/mov_bbb.mp4",
+					DurationSec: 10,
 				},
 				{
 					ID:          "m2_b",
@@ -62,12 +56,6 @@ func GetDefaultSeedWindows(startTime time.Time) []models.Window {
 					Type:        "image",
 					URL:         "https://picsum.photos/id/40/800/600",
 					DurationSec: 7,
-				},
-				{
-					ID:          "m4_b",
-					Type:        "video",
-					URL:         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-					DurationSec: 15,
 				},
 			},
 		},
@@ -90,25 +78,21 @@ func GetDefaultSeedWindows(startTime time.Time) []models.Window {
 				{
 					ID:          "m3_c",
 					Type:        "video",
-					URL:         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-					DurationSec: 15,
-				},
-				{
-					ID:          "m4_c",
-					Type:        "image",
-					URL:         "https://picsum.photos/id/70/800/600",
-					DurationSec: 8,
+					URL:         "https://vjs.zencdn.net/v/oceans.mp4",
+					DurationSec: 12,
 				},
 			},
 		},
 	}
 }
 
-// SeedInitialData populates store with windows A, B, and C if they do not exist
+// SeedInitialData populates store with windows A, B, and C
 func SeedInitialData(ctx context.Context, store db.Store) error {
 	existing, err := store.GetAllWindows(ctx)
 	if err == nil && len(existing) >= 3 {
-		return nil // already seeded
+		// Overwrite seed with fresh valid media URLs
+		startTime := time.Now().UTC()
+		return store.SeedWindows(ctx, GetDefaultSeedWindows(startTime))
 	}
 	startTime := time.Now().UTC()
 	return store.SeedWindows(ctx, GetDefaultSeedWindows(startTime))
