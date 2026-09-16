@@ -10,7 +10,8 @@ RUN go mod download
 # Copy backend source
 COPY backend/ ./
 
-# Build optimized binary
+# Tidy dependencies and build optimized binary
+RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server .
 
 # Minimal runtime image
